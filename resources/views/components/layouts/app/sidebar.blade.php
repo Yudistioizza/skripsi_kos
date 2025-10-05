@@ -16,7 +16,7 @@
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                     <flux:navlist.item icon="user-group" :href="route('penghuni.penghuni-manager')" :current="request()->routeIs('penghuni.penghuni-manager')" wire:navigate>{{ __('Manajemen Penghuni') }}</flux:navlist.item>
                     <flux:navlist.item icon="building-storefront" :href="route('kamar.index')" :current="request()->routeIs('kamar.index')" wire:navigate>{{ __('Manajemen Kamar') }}</flux:navlist.item>
-                    <flux:navlist.item icon="currency-dollar" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Pembayaran') }}</flux:navlist.item>
+                    <flux:navlist.item icon="currency-dollar" :href="route('pembayaran.pembayaran-manager')" :current="request()->routeIs('pembayaran.pembayaran-manager')" wire:navigate>{{ __('Pembayaran') }}</flux:navlist.item>
                     <flux:navlist.item icon="banknotes" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Laporan Keuangan') }}</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>

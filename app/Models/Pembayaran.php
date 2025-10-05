@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Pembayaran extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
     protected $table = 'pembayaran';
 
     protected $fillable = [
         'penghuni_id',
-        'room_id', // ganti dari kamar_id ke room_id
+        'room_id',
         'kode_transaksi',
         'jumlah',
         'periode_mulai',
@@ -26,39 +27,61 @@ class Pembayaran extends Model
         'verified_at',
     ];
 
-    protected $dates = [
-        'periode_mulai',
-        'periode_selesai',
-        'verified_at',
+    protected $casts = [
+        'jumlah' => 'decimal:2',
+        'periode_mulai' => 'date',
+        'periode_selesai' => 'date',
+        'verified_at' => 'datetime',
     ];
 
-    // Relasi ke Penghuni
-    public function penghuni()
+    protected static function boot()
     {
-        return $this->belongsTo(Penghuni::class, 'penghuni_id');
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->kode_transaksi)) {
+                $model->kode_transaksi = 'PAY-' . strtoupper(uniqid());
+            }
+        });
     }
 
-    // Relasi ke Room (kamar)
-    public function room()
+    public function penghuni(): BelongsTo
     {
-        return $this->belongsTo(Room::class, 'room_id'); // ganti dari kamar_id ke room_id
+        return $this->belongsTo(Penghuni::class);
     }
 
-    // Relasi ke User (yang verifikasi)
-    public function verifier()
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
+    }
+
+    public function verifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
     }
 
-    // Relasi ke Bukti Pembayaran
-    public function bukti()
+    public function bukti(): HasMany
     {
-        return $this->hasMany(PembayaranBukti::class, 'pembayaran_id');
+        return $this->hasMany(PembayaranBukti::class);
     }
 
-    // Relasi ke Riwayat Verifikasi
-    public function riwayatVerifikasi()
+    public function verifikasi(): HasMany
     {
-        return $this->hasMany(PembayaranVerifikasi::class, 'pembayaran_id');
+        return $this->hasMany(PembayaranVerifikasi::class);
+    }
+
+    public function scopeMenungguVerifikasi($query)
+    {
+        return $query->where('status', 'menunggu_verifikasi');
+    }
+
+    public function scopeLunas($query)
+    {
+        return $query->where('status', 'lunas');
+    }
+
+    public function scopeJatuhTempo($query)
+    {
+        return $query->where('status', 'jatuh_tempo');
     }
 }
