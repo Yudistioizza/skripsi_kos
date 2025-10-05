@@ -15,7 +15,7 @@
                 <flux:navlist.group :heading="__('')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                     <flux:navlist.item icon="user-group" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Manajemen Penghuni') }}</flux:navlist.item>
-                    <flux:navlist.item icon="building-storefront" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Manajemen Kamar') }}</flux:navlist.item>
+                    <flux:navlist.item icon="building-storefront" :href="route('kamar.index')" :current="request()->routeIs('kamar.index')" wire:navigate>{{ __('Manajemen Kamar') }}</flux:navlist.item>
                     <flux:navlist.item icon="currency-dollar" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Pembayaran') }}</flux:navlist.item>
                     <flux:navlist.item icon="banknotes" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Laporan Keuangan') }}</flux:navlist.item>
                     <flux:navlist.item icon="cog-6-tooth" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Pengaturan') }}</flux:navlist.item>

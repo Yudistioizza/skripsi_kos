@@ -3,29 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Building extends Model
 {
-    use HasFactory;
+    protected $fillable = ['nama'];
 
-    protected $fillable = [
-        'nama',
-    ];
-
-    /**
-     * Relasi ke lantai
-     */
-    public function floors()
+    public function floors(): HasMany
     {
         return $this->hasMany(Floor::class);
     }
 
-    /**
-     * Relasi ke kamar
-     */
-    public function rooms()
+    public function rooms(): HasMany
     {
         return $this->hasMany(Room::class);
+    }
+
+    public function getRoomCountByStatusAttribute()
+    {
+        return [
+            'kosong' => $this->rooms()->where('status', 'kosong')->count(),
+            'terisi' => $this->rooms()->where('status', 'terisi')->count(),
+            'booking' => $this->rooms()->where('status', 'booking')->count(),
+        ];
     }
 }

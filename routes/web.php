@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Kamar\Index;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
@@ -23,7 +24,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(
             when(
                 Features::canManageTwoFactorAuthentication()
-                    && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
+                && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
                 ['password.confirm'],
                 [],
             ),
@@ -31,4 +32,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('two-factor.show');
 });
 
-require __DIR__.'/auth.php';
+Route::get('/kamar', Index::class)
+    ->middleware(['auth', 'verified'])
+    ->name('kamar.index');
+
+require __DIR__ . '/auth.php';
