@@ -12,14 +12,19 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')" class="grid">
+                <flux:navlist.group :heading="__('')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item icon="user-group" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Manajemen Penghuni') }}</flux:navlist.item>
+                    <flux:navlist.item icon="building-storefront" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Manajemen Kamar') }}</flux:navlist.item>
+                    <flux:navlist.item icon="currency-dollar" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Pembayaran') }}</flux:navlist.item>
+                    <flux:navlist.item icon="banknotes" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Laporan Keuangan') }}</flux:navlist.item>
+                    <flux:navlist.item icon="cog-6-tooth" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Pengaturan') }}</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 
             <flux:spacer />
 
-            <flux:navlist variant="outline">
+            {{-- <flux:navlist variant="outline">
                 <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
                 {{ __('Repository') }}
                 </flux:navlist.item>
@@ -27,7 +32,7 @@
                 <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
                 {{ __('Documentation') }}
                 </flux:navlist.item>
-            </flux:navlist>
+            </flux:navlist> --}}
 
             <!-- Desktop User Menu -->
             <flux:dropdown class="hidden lg:block" position="bottom" align="start">
