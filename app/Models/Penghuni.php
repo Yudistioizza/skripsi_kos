@@ -20,7 +20,7 @@ class Penghuni extends Model
         'ktp',
         'perjanjian',
         'status',
-        'kamar_id',
+        'room_id', // Fixed: sesuai migrasi
         'tanggal_masuk',
         'tanggal_keluar',
         'verified_by',
@@ -35,12 +35,11 @@ class Penghuni extends Model
     ];
 
     /**
-     * Relasi ke kamar
+     * Relasi ke kamar/room
      */
     public function kamar()
     {
-        return $this->belongsTo(Room::class, 'kamar_id');
-        // atau Kamar::class kalau model kamu bernama Kamar
+        return $this->belongsTo(Room::class, 'room_id');
     }
 
     /**
@@ -57,5 +56,33 @@ class Penghuni extends Model
     public function verifikasiRiwayat()
     {
         return $this->hasMany(PenghuniVerifikasi::class, 'penghuni_id');
+    }
+
+    /**
+     * Accessor untuk status badge color
+     */
+    public function getStatusBadgeColorAttribute()
+    {
+        return match ($this->status) {
+            'menunggu_verifikasi' => 'yellow',
+            'aktif' => 'green',
+            'ditolak' => 'red',
+            'keluar' => 'gray',
+            default => 'gray',
+        };
+    }
+
+    /**
+     * Accessor untuk status label
+     */
+    public function getStatusLabelAttribute()
+    {
+        return match ($this->status) {
+            'menunggu_verifikasi' => 'Menunggu Verifikasi',
+            'aktif' => 'Aktif',
+            'ditolak' => 'Ditolak',
+            'keluar' => 'Keluar',
+            default => ucfirst($this->status),
+        };
     }
 }

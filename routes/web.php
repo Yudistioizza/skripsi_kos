@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Kamar\Index;
+use App\Livewire\Penghuni\PenghuniManager;
+use App\Livewire\Penghuni\PenghuniRegister;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
@@ -35,5 +37,13 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/kamar', Index::class)
     ->middleware(['auth', 'verified'])
     ->name('kamar.index');
+
+Route::get('/public/daftar-penghuni', PenghuniRegister::class)
+    ->name('penghuni.penghuni-register');
+
+Route::middleware(['auth'])
+    ->group(function () {
+        Route::get('/penghuni', PenghuniManager::class)->name('penghuni.penghuni-manager');
+    });
 
 require __DIR__ . '/auth.php';
