@@ -6,6 +6,7 @@ use App\Livewire\Penghuni\PenghuniManager;
 use App\Livewire\Penghuni\PenghuniRegister;
 use App\Livewire\Pembayaran\PembayaranManager;
 use App\Livewire\Pembayaran\PembayaranForm;
+use App\Livewire\Laporan\LaporanKeuangan;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
@@ -54,5 +55,10 @@ Route::middleware(['auth'])->group(function () {
 
 // Route untuk Public Form (Tidak memerlukan authentication)
 Route::get('/public/upload-bukti-pembayaran', PembayaranForm::class)->name('pembayaran.pembayaran-form');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/laporan-keuangan', LaporanKeuangan::class)
+        ->name('laporan.keuangan');
+});
 
 require __DIR__ . '/auth.php';

@@ -48,6 +48,8 @@ class Index extends Component
     public $status = 'kosong';
     public $editingRoomId = null;
     public $floorsForRoom = [];
+    public bool $showSettingsModal = false;
+
 
     // Selected Room Detail
     public $selectedRoom = null;
@@ -403,7 +405,11 @@ class Index extends Component
         $buildings = Building::withCount(['rooms', 'floors'])->get();
         $allFloors = Floor::with('building')->withCount('rooms')->orderBy('building_id')->orderBy('nomor_lantai')->get();
         $roomTypes = RoomType::withCount('rooms')->get();
-        $rooms = Room::with(['building', 'floor', 'roomType'])->orderBy('building_id')->orderBy('floor_id')->orderBy('nomor_kamar')->get();
+        $rooms = Room::with(['building', 'floor', 'roomType'])
+            ->orderBy('building_id')
+            ->orderBy('floor_id')
+            ->orderBy('nomor_kamar')
+            ->get();
 
         // For grid view
         $roomsByFloor = [];

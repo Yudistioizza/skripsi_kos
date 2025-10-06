@@ -43,6 +43,31 @@
         @endforeach
     </div>
 
+    <div class="mb-4 p-4 bg-white rounded-lg shadow-sm">
+        <h2 class="text-sm font-semibold text-gray-700 mb-1">
+            Link Form Registrasi Penghuni
+        </h2>
+        <p class="text-xs text-gray-500 mb-3">
+            Bagikan link ini ke calon penghuni kos Anda
+        </p>
+        
+        <div class="flex items-center space-x-2">
+            <input 
+                id="form-link" 
+                type="text" 
+                value="{{ url('/public/upload-bukti-pembayaran') }}" 
+                readonly 
+                class="flex-1 px-2 py-1 text-xs border rounded bg-gray-50 text-gray-600 focus:outline-none"
+            >
+            <button 
+                onclick="navigator.clipboard.writeText(document.getElementById('form-link').value)" 
+                class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 focus:ring focus:ring-blue-300 transition"
+            >
+                Copy
+            </button>
+        </div>
+    </div>
+
     {{-- Filter & Tambah --}}
     <div class="mb-6 bg-white rounded-lg shadow p-4">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
