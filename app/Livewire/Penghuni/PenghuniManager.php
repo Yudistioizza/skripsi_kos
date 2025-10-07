@@ -9,6 +9,8 @@ use App\Models\Room;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+
 
 class PenghuniManager extends Component
 {
@@ -46,7 +48,13 @@ class PenghuniManager extends Component
     {
         return [
             'nama' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:penghuni,email,' . $this->penghuniId,
+            'email' => [
+                'nullable',
+                'email',
+                $this->penghuniId
+                ? Rule::unique('penghuni', 'email')->ignore($this->penghuniId)
+                : Rule::unique('penghuni', 'email'),
+            ],
             'no_hp' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'ktp_file' => $this->isEdit ? 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048' : 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',

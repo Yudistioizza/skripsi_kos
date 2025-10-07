@@ -403,6 +403,9 @@ class Index extends Component
     public function render()
     {
         $buildings = Building::withCount(['rooms', 'floors'])->get();
+        if ($this->room_building_id && empty($this->floorsForRoom)) {
+            $this->loadFloorsForRoom($this->room_building_id);
+        }
         $allFloors = Floor::with('building')->withCount('rooms')->orderBy('building_id')->orderBy('nomor_lantai')->get();
         $roomTypes = RoomType::withCount('rooms')->get();
         $rooms = Room::with(['building', 'floor', 'roomType'])
