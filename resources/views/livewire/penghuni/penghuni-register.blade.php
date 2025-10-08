@@ -70,34 +70,62 @@
                             </div>
                         </div>
 
-                        <!-- Section: Informasi Kos -->
+                        <!-- Informasi Kos -->
                         <div>
                             <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Informasi Kos</h3>
-                            
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Pilih Kamar -->
+
+                                <!-- Gedung -->
                                 <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Gedung</label>
+                                    <select wire:model.live="selectedBuilding"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                        <option value="">-- Pilih Gedung --</option>
+                                        @foreach(\App\Models\Building::all() as $b)
+                                            <option value="{{ $b->id }}">{{ $b->nama }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Lantai -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Lantai</label>
+                                    <select wire:model.live="selectedFloor"
+                                        {{ !$selectedBuilding ? 'disabled' : '' }}
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                        <option value="">-- Pilih Lantai --</option>
+                                        @foreach($floors as $f)
+                                            <option value="{{ $f->id }}">Lantai {{ $f->nomor_lantai }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Kamar (kosong/booking) -->
+                                <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        Pilih Kamar (Opsional)
+                                        Pilih Kamar <span class="text-red-500">*</span>
                                     </label>
-                                    <select wire:model="room_id" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                                        <option value="">Pilih Kamar</option>
-                                        @foreach($rooms as $room)
-                                            <option value="{{ $room->id }}">{{ $room->nama }} - {{ $room->tipe ?? '' }}</option>
+                                    <select wire:model="room_id"
+                                        {{ !$selectedFloor ? 'disabled' : '' }}
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                        <option value="">-- Pilih Kamar --</option>
+                                        @foreach($rooms as $r)
+                                            <option value="{{ $r->id }}">
+                                                {{ $r->nomor_kamar }} - {{ $r->roomType->nama ?? 'Tipe tidak diketahui' }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     @error('room_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                                    <p class="text-xs text-gray-500 mt-1">Biarkan kosong jika belum menentukan kamar</p>
+                                    <p class="text-xs text-gray-500 mt-1">Hanya kamar kosong/booking yang ditampilkan</p>
                                 </div>
 
                                 <!-- Tanggal Masuk -->
-                                <div>
+                                <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         Tanggal Masuk <span class="text-red-500">*</span>
                                     </label>
-                                    <input wire:model="tanggal_masuk" type="date" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    <input wire:model="tanggal_masuk" type="date"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                         min="{{ date('Y-m-d') }}">
                                     @error('tanggal_masuk') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
@@ -107,11 +135,11 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         Catatan Tambahan (Opsional)
                                     </label>
-                                    <textarea wire:model="catatan" rows="3" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    <textarea wire:model="catatan" rows="3"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                         placeholder="Tuliskan catatan atau permintaan khusus"></textarea>
-                                    @error('catatan') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                 </div>
+
                             </div>
                         </div>
 

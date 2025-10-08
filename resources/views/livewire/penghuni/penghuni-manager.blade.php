@@ -297,9 +297,17 @@
                 <h3 class="text-lg font-bold text-gray-900 mb-4">Verifikasi Penghuni</h3>
 
                 <form wire:submit.prevent="verify">
+                    {{-- Peringatan ditaruh di DALAM form --}}
+                    @if($roomIsOccupied)
+                        <div class="mb-3 p-3 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg">
+                            Kamar ini sudah ditempati penghuni aktif lain. Anda hanya dapat menolak atau meminta penggantian kamar.
+                        </div>
+                    @endif
+
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700">Status Verifikasi *</label>
-                        <select wire:model="verifyStatus" class="w-full px-3 py-2 border rounded-lg">
+                        <select wire:model="verifyStatus" class="w-full px-3 py-2 border rounded-lg"
+                            {{ $roomIsOccupied ? 'disabled' : '' }}>
                             <option value="">-- Pilih --</option>
                             <option value="aktif">Terima</option>
                             <option value="ditolak">Tolak</option>
@@ -314,8 +322,17 @@
                     </div>
 
                     <div class="flex justify-end gap-3">
-                        <button type="button" wire:click="closeVerifyModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button>
+                        <button type="button" wire:click="closeVerifyModal"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                            Batal
+                        </button>
+
+                        {{-- Tombol Simpan ikut disable bila kamar terisi & pilih Terima --}}
+                        <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            {{ $roomIsOccupied && $verifyStatus === 'aktif' ? 'disabled' : '' }}>
+                            Simpan
+                        </button>
                     </div>
                 </form>
             </div>

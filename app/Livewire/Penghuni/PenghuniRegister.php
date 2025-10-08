@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\Penghuni;
 use App\Models\PenghuniVerifikasi;
 use App\Models\Room;
+use App\Models\Floor;
 use Livewire\WithFileUploads;
 
 class PenghuniRegister extends Component
@@ -23,7 +24,10 @@ class PenghuniRegister extends Component
     public $catatan;
 
     public $submitted = false;
-
+    public $selectedBuilding = '';
+    public $selectedFloor = '';
+    public $floors = [];
+    public $rooms = [];
     protected $rules = [
         'nama' => 'required|string|max:255',
         'email' => 'required|email|unique:penghuni,email',
@@ -58,7 +62,33 @@ class PenghuniRegister extends Component
             'rooms' => Room::where('status', 'tersedia')->get(),
         ])->layout('guest');
     }
+    public function mount()
+    {
+        $this->selectedBuilding = '';
+        $this->selectedFloor = '';
+        $this->floors = collect();
+        $this->rooms = collect();
+    }
 
+    public function updatedSelectedBuilding($id)
+    {
+        $this->selectedFloor = '';
+        $this->room_id = '';
+        $this->floors = $id ? Floor::where('building_id', $id)->orderBy('nomor_lantai')->get() : collect();
+        $this->rooms = collect();
+    }
+
+    public function updatedSelectedFloor($id)
+    {
+        $this->room_id = '';
+        $this->rooms = $id
+            ? Room::where('floor_id', $id)
+                ->whereIn('status', ['kosong', 'booking'])
+                ->with('roomType')
+                ->orderBy('nomor_kamar')
+                ->get()
+            : collect();
+    }
     public function submit()
     {
         $this->validate();
@@ -95,6 +125,12 @@ class PenghuniRegister extends Component
                 'catatan' => 'Pendaftaran awal melalui form publik',
                 'verified_at' => now(),
             ]);
+
+            // di method submit()
+            if ($this->room_id) {
+                // opsional: tandai kamar sebagai "booking" supaya tidak dipilih orang lain
+                Room::where('id', $this->room_id)->update(['status' => 'booking']);
+            }
 
             $this->submitted = true;
             $this->reset(['nama', 'email', 'no_hp', 'alamat', 'ktp_file', 'perjanjian_file', 'room_id', 'tanggal_masuk', 'catatan']);

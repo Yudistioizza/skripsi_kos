@@ -34,6 +34,7 @@ class PenghuniManager extends Component
     public $selectedFloorForm = '';
     public $floorsForForm = [];
     public $roomsForForm = [];
+    public $roomIsOccupied = false;
 
     protected $paginationTheme = 'tailwind';
 
@@ -54,7 +55,12 @@ class PenghuniManager extends Component
             'ktp_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'perjanjian_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'status' => 'required|in:menunggu_verifikasi,aktif,ditolak,keluar',
-            'room_id' => 'nullable|exists:rooms,id',
+            'room_id' => [
+                'nullable',
+                Rule::exists('rooms', 'id')->where(function ($q) {
+                    $q->whereIn('status', ['kosong', 'booking']);
+                }),
+            ],
             'tanggal_masuk' => 'nullable|date',
             'tanggal_keluar' => 'nullable|date|after_or_equal:tanggal_masuk',
             'catatan' => 'nullable|string',
@@ -117,13 +123,18 @@ class PenghuniManager extends Component
     public function updatedSelectedFloorForm($id)
     {
         $this->room_id = '';
-        $this->roomsForForm = $id ? Room::where('floor_id', $id)->orderBy('nomor_kamar')->get() : [];
+        $this->roomsForForm = $id
+            ? Room::where('floor_id', $id)
+                ->whereIn('status', ['kosong', 'booking']) // << tambahan
+                ->orderBy('nomor_kamar')
+                ->get()
+            : [];
     }
 
     /* ---------- Edit ---------- */
     public function edit($id)
     {
-        $penghuni = Penghuni::with('room.floor')->findOrFail($id);
+        $penghuni = Penghuni::with('kamar.floor')->findOrFail($id);
         $this->fill($penghuni->only([
             'nama',
             'email',
@@ -173,9 +184,30 @@ class PenghuniManager extends Component
             if ($this->perjanjian_file) {
                 $data['perjanjian'] = $this->perjanjian_file->store('penghuni/perjanjian', 'public');
             }
+            if ($this->room_id) {
+                // Jika penghuni ini statusnya aktif → kamar jadi terisi
+                if ($this->status === 'aktif') {
+                    Room::where('id', $this->room_id)->update(['status' => 'terisi']);
+                } else {
+                    // kalau masih menunggu/ditolak/keluar → biarkan kosong/booking
+                    // (tidak mengubah status kamar)
+                }
+            }
 
             if ($this->isEdit) {
                 $penghuni = Penghuni::find($this->penghuniId);
+                $oldRoom = $penghuni->room_id;   // simpan sebelum update
+
+                /* kalau ganti kamar */
+                if ($oldRoom && $oldRoom != $this->room_id) {
+                    // kamar lama → kosong
+                    Room::where('id', $oldRoom)->update(['status' => 'kosong']);
+                }
+
+                /* mark kamar baru (hanya bila penghuni sekarang aktif) */
+                if ($this->room_id && $this->status === 'aktif') {
+                    Room::where('id', $this->room_id)->update(['status' => 'terisi']);
+                }
                 if ($this->ktp_file && $penghuni->ktp)
                     Storage::disk('public')->delete($penghuni->ktp);
                 if ($this->perjanjian_file && $penghuni->perjanjian)
@@ -198,10 +230,18 @@ class PenghuniManager extends Component
     {
         try {
             $penghuni = Penghuni::findOrFail($id);
+
+            /* kembalikan kamar ke kosong */
+            if ($penghuni->room_id) {
+                Room::where('id', $penghuni->room_id)->update(['status' => 'kosong']);
+            }
+
+            // hapus file
             if ($penghuni->ktp)
                 Storage::disk('public')->delete($penghuni->ktp);
             if ($penghuni->perjanjian)
                 Storage::disk('public')->delete($penghuni->perjanjian);
+
             $penghuni->delete();
             session()->flash('message', 'Data penghuni berhasil dihapus.');
         } catch (\Exception $e) {
@@ -237,5 +277,75 @@ class PenghuniManager extends Component
     public function updatingFilterStatus()
     {
         $this->resetPage();
+    }
+
+    /* ---------- Modal Verifikasi ---------- */
+    public function openVerifyModal($id)
+    {
+        $penghuni = Penghuni::with('kamar')->findOrFail($id);
+
+        $this->verifyPenghuniId = $id;
+        $this->verifyStatus = '';
+        $this->verifyCatatan = '';
+        $this->roomIsOccupied = false;
+
+        // kalau kamar sudah TERISI oleh penghuni LAIN
+        if ($penghuni->kamar && $penghuni->kamar->status === 'terisi') {
+            // pastikan yang mengisi BUKAN dirinya sendiri
+            $occupiedByOther = Penghuni::where('room_id', $penghuni->room_id)
+                ->where('status', 'aktif')
+                ->where('id', '!=', $penghuni->id)
+                ->exists();
+
+            $this->roomIsOccupied = $occupiedByOther;
+        }
+
+        $this->showVerifyModal = true;
+    }
+
+    public function closeVerifyModal()
+    {
+        $this->showVerifyModal = false;
+        $this->verifyPenghuniId = null;
+        $this->verifyStatus = '';
+        $this->verifyCatatan = '';
+    }
+
+    public function verify()
+    {
+        $this->validate([
+            'verifyStatus' => 'required|in:aktif,ditolak',
+            'verifyCatatan' => 'nullable|string',
+        ]);
+
+        // blok jika mau menerima tapi kamar sudah terisi orang lain
+        if ($this->verifyStatus === 'aktif' && $this->roomIsOccupied) {
+            session()->flash('error', 'Kamar ini sudah ditempati penghuni aktif lain. Silakan tolak atau minta penghuni mengganti kamar.');
+            return;
+        }
+
+        // lanjut proses seperti biasa
+        $penghuni = Penghuni::findOrFail($this->verifyPenghuniId);
+        $penghuni->update([
+            'status' => $this->verifyStatus,
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+            'catatan' => $this->verifyCatatan,
+        ]);
+
+        if ($this->verifyStatus === 'aktif' && $penghuni->room_id) {
+            Room::where('id', $penghuni->room_id)->update(['status' => 'terisi']);
+        }
+
+        PenghuniVerifikasi::create([
+            'penghuni_id' => $this->verifyPenghuniId,
+            'verified_by' => auth()->id(),
+            'status' => $this->verifyStatus,
+            'catatan' => $this->verifyCatatan,
+            'verified_at' => now(),
+        ]);
+
+        session()->flash('message', 'Verifikasi berhasil disimpan.');
+        $this->closeVerifyModal();
     }
 }
