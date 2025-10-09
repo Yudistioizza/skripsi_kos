@@ -88,7 +88,7 @@
                 <p class="text-sm text-gray-500 mt-1">Menampilkan {{ $transaksi->count() }} data</p>
             </div>
             <div class="flex gap-3">
-                <button wire:click="exportExcel"
+                {{-- <button wire:click="exportExcel"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg
                                hover:bg-green-700 active:bg-green-800 transition text-sm font-medium">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,7 +96,7 @@
                               d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     Export Excel
-                </button>
+                </button> --}}
                 <button wire:click="exportPdf"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg
                                hover:bg-red-700 active:bg-red-800 transition text-sm font-medium">
@@ -135,7 +135,7 @@
                                 {{ $trx->penghuni->nama ?? '-' }}
                             </td>
                             <td class="px-5 py-4 whitespace-nowrap">
-                                {{ $trx->room->nama ?? '-' }}
+                                {{ $trx->room->nomor_kamar ?? '-' }}
                             </td>
                             <td class="px-5 py-4 whitespace-nowrap text-right font-semibold">
                                 Rp {{ number_format($trx->jumlah, 0, ',', '.') }}

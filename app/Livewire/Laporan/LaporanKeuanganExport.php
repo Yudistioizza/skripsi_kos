@@ -45,7 +45,7 @@ class LaporanKeuanganExport implements FromCollection, WithHeadings, WithMapping
             $row->created_at->format('d/m/Y'),
             $row->kode_transaksi,
             $row->penghuni->nama ?? '-',
-            $row->room->nama ?? '-',
+            $row->room->nomor_kamar ?? '-',
             number_format($row->jumlah, 2, ',', '.'),
             ucfirst($row->status),
         ];

@@ -123,7 +123,7 @@
                     <td>{{ $trx->created_at->format('d/m/Y') }}</td>
                     <td>{{ $trx->kode_transaksi }}</td>
                     <td>{{ $trx->penghuni->nama ?? '-' }}</td>
-                    <td>{{ $trx->room->nama ?? '-' }}</td>
+                    <td>{{ $trx->room->nomor_kamar ?? '-' }}</td>
                     <td style="text-align:right">Rp {{ number_format($trx->jumlah, 0, ',', '.') }}</td>
                     <td style="text-align:center">
                         <span class="status {{ $trx->status === 'lunas' ? 'lunas' : 'belum-bayar' }}">
