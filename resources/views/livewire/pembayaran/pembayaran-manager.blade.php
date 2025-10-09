@@ -186,7 +186,7 @@
 
     {{-- Modal Tambah/Edit --}}
     @if($showModal)
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="fixed inset-0 backdrop-blur-sm bg-black/30 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold">{{ $pembayaranId ? 'Edit' : 'Tambah' }} Pembayaran</h3>
@@ -200,7 +200,7 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Penghuni *</label>
-                            <select wire:model="penghuni_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <select wire:model.live="penghuni_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 <option value="">Pilih Penghuni</option>
                                 @foreach($penghuni as $p)
                                     <option value="{{ $p->id }}">{{ $p->nama }}</option>
@@ -208,31 +208,21 @@
                             </select>
                             @error('penghuni_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Kamar (opsional)</label>
-                            <select wire:model="room_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option value="">Pilih Kamar</option>
-                                @foreach($rooms as $r)
-                                    <option value="{{ $r->id }}">{{ $r->nama }}</option>
-                                @endforeach
-                            </select>
-                            @error('room_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Periode Mulai *</label>
-                                <input type="date" wire:model="periode_mulai" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <input type="date" wire:model.live="periode_mulai" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 @error('periode_mulai') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Periode Selesai *</label>
-                                <input type="date" wire:model="periode_selesai" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <input type="date" wire:model.live="periode_selesai" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 @error('periode_selesai') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah (Rp) *</label>
-                            <input type="number" step="0.01" wire:model="jumlah" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <input type="number" step="0.01" wire:model.live="jumlah" placeholder="0" {{ $penghuni_id ? 'readonly' : '' }} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                             @error('jumlah') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
@@ -270,7 +260,7 @@
 
     {{-- Modal Verifikasi --}}
     @if($showVerifikasiModal)
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="fixed inset-0 backdrop-blur-sm bg-black/30 overflow-y-auto h-full w-full z-50">
             <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold">Verifikasi Pembayaran</h3>

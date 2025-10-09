@@ -84,4 +84,20 @@ class Pembayaran extends Model
     {
         return $query->where('status', 'jatuh_tempo');
     }
+
+    public function scopeFilterStatus($query, $status)
+    {
+        return $status === 'all' ? $query : $query->where('status', $status);
+    }
+
+    public function scopeSearch($query, $keyword)
+    {
+        if (!$keyword)
+            return $query;
+
+        return $query->where(function ($q) use ($keyword) {
+            $q->where('kode_transaksi', 'like', '%' . $keyword . '%')
+                ->orWhereHas('penghuni', fn($q) => $q->where('nama', 'like', '%' . $keyword . '%'));
+        });
+    }
 }

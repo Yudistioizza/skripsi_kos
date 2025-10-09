@@ -142,7 +142,19 @@ class Index extends Component
 
     public function saveBuilding()
     {
-        $this->validate(['building_nama' => 'required|string|max:255']);
+        $this->validate([
+            'building_nama' => 'required|string|max:255',
+        ]);
+
+        // cek duplikat nama (case-insensitive)
+        $exists = Building::whereRaw('LOWER(nama) = ?', [strtolower($this->building_nama)])
+            ->when($this->editingBuildingId, fn($q) => $q->where('id', '!=', $this->editingBuildingId))
+            ->exists();
+
+        if ($exists) {
+            session()->flash('error', 'Nama gedung sudah ada.');
+            return;
+        }
 
         if ($this->editingBuildingId) {
             Building::find($this->editingBuildingId)->update(['nama' => $this->building_nama]);
@@ -196,6 +208,17 @@ class Index extends Component
             'floor_building_id' => 'required|exists:buildings,id',
             'floor_nomor_lantai' => 'required|integer|min:1',
         ]);
+
+        // cek duplikat nomor lantai di gedung yang sama
+        $exists = Floor::where('building_id', $this->floor_building_id)
+            ->where('nomor_lantai', $this->floor_nomor_lantai)
+            ->when($this->editingFloorId, fn($q) => $q->where('id', '!=', $this->editingFloorId))
+            ->exists();
+
+        if ($exists) {
+            session()->flash('error', 'Nomor lantai sudah ada di gedung ini.');
+            return;
+        }
 
         if ($this->editingFloorId) {
             Floor::find($this->editingFloorId)->update([
@@ -258,6 +281,16 @@ class Index extends Component
             'roomtype_nama' => 'required|string|max:255',
             'roomtype_harga' => 'required|numeric|min:0',
         ]);
+
+        // cek duplikat nama (case-insensitive)
+        $exists = RoomType::whereRaw('LOWER(nama) = ?', [strtolower($this->roomtype_nama)])
+            ->when($this->editingRoomTypeId, fn($q) => $q->where('id', '!=', $this->editingRoomTypeId))
+            ->exists();
+
+        if ($exists) {
+            session()->flash('error', 'Nama tipe kamar sudah ada.');
+            return;
+        }
 
         if ($this->editingRoomTypeId) {
             RoomType::find($this->editingRoomTypeId)->update([
@@ -325,6 +358,17 @@ class Index extends Component
             'nomor_kamar' => 'required|string|max:50',
             'status' => 'required|in:kosong,terisi,booking',
         ]);
+
+        // cek duplikat nomor kamar di lantai yang sama
+        $exists = Room::where('floor_id', $this->room_floor_id)
+            ->where('nomor_kamar', $this->nomor_kamar)
+            ->when($this->editingRoomId, fn($q) => $q->where('id', '!=', $this->editingRoomId))
+            ->exists();
+
+        if ($exists) {
+            session()->flash('error', 'Nomor kamar sudah ada di lantai ini.');
+            return;
+        }
 
         if ($this->editingRoomId) {
             Room::find($this->editingRoomId)->update([

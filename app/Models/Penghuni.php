@@ -85,4 +85,10 @@ class Penghuni extends Model
             default => ucfirst($this->status),
         };
     }
+
+    public function scopeHasActiveRoom($query)
+    {
+        return $query->whereNotNull('room_id')
+            ->whereHas('kamar', fn($q) => $q->whereNotNull('room_type_id'));
+    }
 }

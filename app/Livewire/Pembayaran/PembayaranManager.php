@@ -16,44 +16,27 @@ class PembayaranManager extends Component
 {
     use WithFileUploads, WithPagination;
 
-    // Form properties
     public $pembayaranId;
-    public $penghuni_id;
-    public $room_id;
-    public $jumlah;
-    public $periode_mulai;
-    public $periode_selesai;
-    public $metode = 'cash';
-    public $catatan;
-    public $bukti_file;
-
-    // Filter properties
-    public $filterStatus = 'all';
-    public $search = '';
-
-    // Modal states
-    public $showModal = false;
-    public $showVerifikasiModal = false;
-    public $showBuktiModal = false;
-
-    // Verifikasi properties
-    public $verifikasiPembayaranId;
-    public $verifikasiStatus;
-    public $verifikasiCatatan;
-
-    // View bukti
+    public $penghuni_id, $room_id, $jumlah, $periode_mulai, $periode_selesai;
+    public $metode = 'cash', $catatan, $bukti_file;
+    public $filterStatus = 'all', $search = '';
+    public $showModal = false, $showVerifikasiModal = false, $showBuktiModal = false;
+    public $verifikasiPembayaranId, $verifikasiStatus = 'lunas', $verifikasiCatatan;
     public $viewBuktiPembayaran;
 
     protected $paginationTheme = 'tailwind';
-
+    protected $casts = [
+        'tanggal_masuk' => 'datetime',
+        'tanggal_keluar' => 'datetime',
+    ];
     protected function rules()
     {
         return [
             'penghuni_id' => 'required|exists:penghuni,id',
             'room_id' => 'nullable|exists:rooms,id',
             'jumlah' => 'required|numeric|min:0',
-            'periode_mulai' => 'required|date',
-            'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
+            'periode_mulai' => 'required|date|after_or_equal:today',
+            'periode_selesai' => 'required|date|after:periode_mulai',
             'metode' => 'required|in:cash,transfer,e-wallet',
             'catatan' => 'nullable|string|max:1000',
             'bukti_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -62,65 +45,47 @@ class PembayaranManager extends Component
 
     public function mount()
     {
-        $this->periode_mulai = now()->startOfMonth()->format('Y-m-d');
-        $this->periode_selesai = now()->endOfMonth()->format('Y-m-d');
+
     }
 
     public function render()
     {
-        $pembayaranQuery = Pembayaran::with(['penghuni', 'room', 'verifiedBy', 'bukti'])
-            ->when($this->filterStatus !== 'all', function ($query) {
-                $query->where('status', $this->filterStatus);
-            })
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('kode_transaksi', 'like', '%' . $this->search . '%')
-                        ->orWhereHas('penghuni', function ($pq) {
-                            $pq->where('nama', 'like', '%' . $this->search . '%');
-                        });
-                });
-            })
-            ->latest();
+        $pembayaran = Pembayaran::with(['penghuni', 'room', 'verifiedBy', 'bukti'])
+            ->filterStatus($this->filterStatus)
+            ->search($this->search)
+            ->latest()
+            ->paginate(10);
 
-        $pembayaran = $pembayaranQuery->paginate(10);
-
-        $penghuni = Penghuni::all();
+        $penghuni = Penghuni::hasActiveRoom()->get();
         $rooms = Room::all();
-
-        // Hitung notifikasi
-        $menungguVerifikasi = Pembayaran::menungguVerifikasi()->count();
-        $jatuhTempo = Pembayaran::jatuhTempo()->count();
 
         return view('livewire.pembayaran.pembayaran-manager', [
             'pembayaran' => $pembayaran,
             'penghuni' => $penghuni,
             'rooms' => $rooms,
-            'menungguVerifikasi' => $menungguVerifikasi,
-            'jatuhTempo' => $jatuhTempo,
+            'menungguVerifikasi' => Pembayaran::menungguVerifikasi()->count(),
+            'jatuhTempo' => Pembayaran::jatuhTempo()->count(),
         ]);
     }
 
     public function create()
     {
-        $this->reset(['pembayaranId', 'penghuni_id', 'room_id', 'jumlah', 'catatan', 'bukti_file']);
-        $this->metode = 'cash';
-        $this->periode_mulai = now()->startOfMonth()->format('Y-m-d');
-        $this->periode_selesai = now()->endOfMonth()->format('Y-m-d');
+        $this->resetForm();
         $this->showModal = true;
     }
 
     public function edit($id)
     {
-        $pembayaran = Pembayaran::findOrFail($id);
+        $p = Pembayaran::findOrFail($id);
 
-        $this->pembayaranId = $pembayaran->id;
-        $this->penghuni_id = $pembayaran->penghuni_id;
-        $this->room_id = $pembayaran->room_id;
-        $this->jumlah = $pembayaran->jumlah;
-        $this->periode_mulai = $pembayaran->periode_mulai->format('Y-m-d');
-        $this->periode_selesai = $pembayaran->periode_selesai->format('Y-m-d');
-        $this->metode = $pembayaran->metode ?? 'cash';
-        $this->catatan = $pembayaran->catatan;
+        $this->pembayaranId = $p->id;
+        $this->penghuni_id = $p->penghuni_id;
+        $this->room_id = $p->room_id;
+        $this->jumlah = $p->jumlah;
+        $this->periode_mulai = $p->periode_mulai->format('Y-m-d');
+        $this->periode_selesai = $p->periode_selesai->format('Y-m-d');
+        $this->metode = $p->metode;
+        $this->catatan = $p->catatan;
 
         $this->showModal = true;
     }
@@ -141,19 +106,16 @@ class PembayaranManager extends Component
             ];
 
             if ($this->pembayaranId) {
-                // Update
                 $pembayaran = Pembayaran::findOrFail($this->pembayaranId);
                 $pembayaran->update($data);
                 $message = 'Pembayaran berhasil diperbarui!';
             } else {
-                // Create
-                $data['status'] = 'lunas'; // Pembayaran manual langsung lunas
+                $data['status'] = 'lunas';
                 $data['verified_by'] = auth()->id();
                 $data['verified_at'] = now();
 
                 $pembayaran = Pembayaran::create($data);
 
-                // Catat verifikasi
                 PembayaranVerifikasi::create([
                     'pembayaran_id' => $pembayaran->id,
                     'verified_by' => auth()->id(),
@@ -165,15 +127,12 @@ class PembayaranManager extends Component
                 $message = 'Pembayaran berhasil ditambahkan!';
             }
 
-            // Upload bukti jika ada
             if ($this->bukti_file) {
                 $path = $this->bukti_file->store('pembayaran/bukti', 'public');
-                $extension = $this->bukti_file->getClientOriginalExtension();
-
                 PembayaranBukti::create([
                     'pembayaran_id' => $pembayaran->id,
                     'file_path' => $path,
-                    'tipe' => $extension,
+                    'tipe' => $this->bukti_file->getClientOriginalExtension(),
                     'uploaded_by' => auth()->id(),
                 ]);
             }
@@ -187,12 +146,43 @@ class PembayaranManager extends Component
         }
     }
 
+    public function updatedPenghuniId($id)
+    {
+        if (!$id) {
+            return $this->resetForm();
+        }
+
+        // Ambil data penghuni beserta kamar dan tipe kamarnya
+        $penghuni = Penghuni::with('kamar.roomType')->find($id);
+
+        if (!$penghuni) {
+            return;
+        }
+
+        // Isi kamar dan harga otomatis
+        $this->room_id = $penghuni->kamar?->id;
+        $this->jumlah = $penghuni->kamar?->roomType?->harga ?? 0;
+
+        // Ambil pembayaran terakhir penghuni ini
+        $lastPayment = \App\Models\Pembayaran::where('penghuni_id', $id)
+            ->latest('periode_selesai')
+            ->first();
+
+        if ($lastPayment) {
+            // Lanjutkan periode dari selesai + 1 hari
+            $this->periode_mulai = $lastPayment->periode_selesai->copy()->addDay()->format('Y-m-d');
+            $this->periode_selesai = $lastPayment->periode_selesai->copy()->addMonth()->format('Y-m-d');
+        } else {
+            // Belum pernah bayar → pakai bulan ini
+            $this->periode_mulai = optional($penghuni->tanggal_masuk)->format('Y-m-d') ?? now()->startOfMonth()->format('Y-m-d');
+            $this->periode_selesai = optional($penghuni->tanggal_keluar)->format('Y-m-d') ?? now()->endOfMonth()->format('Y-m-d');
+        }
+    }
+
     public function delete($id)
     {
         try {
-            $pembayaran = Pembayaran::findOrFail($id);
-            $pembayaran->delete();
-
+            Pembayaran::findOrFail($id)->delete();
             session()->flash('success', 'Pembayaran berhasil dihapus!');
         } catch (\Exception $e) {
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -215,17 +205,15 @@ class PembayaranManager extends Component
         ]);
 
         try {
-            $pembayaran = Pembayaran::findOrFail($this->verifikasiPembayaranId);
-
-            $pembayaran->update([
+            $p = Pembayaran::findOrFail($this->verifikasiPembayaranId);
+            $p->update([
                 'status' => $this->verifikasiStatus,
                 'verified_by' => auth()->id(),
                 'verified_at' => now(),
             ]);
 
-            // Catat riwayat verifikasi
             PembayaranVerifikasi::create([
-                'pembayaran_id' => $pembayaran->id,
+                'pembayaran_id' => $p->id,
                 'verified_by' => auth()->id(),
                 'status' => $this->verifikasiStatus,
                 'catatan' => $this->verifikasiCatatan,
@@ -251,11 +239,8 @@ class PembayaranManager extends Component
         try {
             $bukti = PembayaranBukti::findOrFail($buktiId);
             $bukti->delete();
-
-            // Reload data
             $this->viewBuktiPembayaran = Pembayaran::with('bukti')->findOrFail($this->viewBuktiPembayaran->id);
-
-            session()->flash('success', 'Bukti pembayaran berhasil dihapus!');
+            session()->flash('success', 'Bukti berhasil dihapus!');
         } catch (\Exception $e) {
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -263,20 +248,18 @@ class PembayaranManager extends Component
 
     public function closeModal()
     {
+        $this->resetForm();
         $this->showModal = false;
-        $this->reset(['pembayaranId', 'penghuni_id', 'room_id', 'jumlah', 'catatan', 'bukti_file']);
     }
 
     public function closeVerifikasiModal()
     {
-        $this->showVerifikasiModal = false;
-        $this->reset(['verifikasiPembayaranId', 'verifikasiStatus', 'verifikasiCatatan']);
+        $this->reset(['verifikasiPembayaranId', 'verifikasiStatus', 'verifikasiCatatan', 'showVerifikasiModal']);
     }
 
     public function closeBuktiModal()
     {
-        $this->showBuktiModal = false;
-        $this->viewBuktiPembayaran = null;
+        $this->reset(['viewBuktiPembayaran', 'showBuktiModal']);
     }
 
     public function updatingSearch()
@@ -287,5 +270,24 @@ class PembayaranManager extends Component
     public function updatingFilterStatus()
     {
         $this->resetPage();
+    }
+
+    private function resetForm()
+    {
+        $this->reset([
+            'pembayaranId',
+            'penghuni_id',
+            'room_id',
+            'jumlah',
+            'catatan',
+            'bukti_file',
+            'metode'
+        ]);
+    }
+
+    private function resetPeriode()
+    {
+        $this->periode_mulai = now()->startOfMonth()->format('Y-m-d');
+        $this->periode_selesai = now()->endOfMonth()->format('Y-m-d');
     }
 }
