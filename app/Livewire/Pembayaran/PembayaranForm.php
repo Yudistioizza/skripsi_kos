@@ -25,6 +25,8 @@ class PembayaranForm extends Component
 
     public $submitted = false;
     public $kode_transaksi;
+    public $suggestions = [];
+    public $showSuggest = false;
 
     protected function rules()
     {
@@ -71,12 +73,86 @@ class PembayaranForm extends Component
             ->layout('guest');
     }
 
+    /* -------------------------------------------------
+     | Real-time matching & auto-fill
+     *--------------------------------------------------*/
+
+    public function searchPenghuni()
+    {
+        /* panggil hook updated secara implisit */
+        $this->matchPenghuni();
+    }
+    public function updated($field)
+    {
+        if (in_array($field, ['nama_penghuni', 'email'])) {
+            $this->matchPenghuni();
+        }
+    }
+
+    private function matchPenghuni()
+    {
+        $this->suggestions = [];
+        $this->showSuggest = false;
+
+        // minimal 2 karakter
+        if (strlen($this->nama_penghuni) < 2 && strlen($this->email) < 2) {
+            return;
+        }
+
+        $q = Penghuni::with('kamar.roomType')
+            ->whereNotNull('room_id'); // sudah ter-assign kamar
+
+        if ($this->nama_penghuni) {
+            $q->where('nama', 'like', '%' . $this->nama_penghuni . '%');
+        }
+        if ($this->email) {
+            $q->where('email', 'like', '%' . $this->email . '%');
+        }
+
+        $this->suggestions = $q->limit(5)->get();
+        $this->showSuggest = $this->suggestions->isNotEmpty();
+
+        // jika tepat 1 & sama persis → langsung isi
+        if (
+            $this->suggestions->count() === 1 &&
+            strcasecmp($this->suggestions[0]->nama, $this->nama_penghuni) === 0 &&
+            strcasecmp($this->suggestions[0]->email, $this->email) === 0
+        ) {
+
+            $this->fillData($this->suggestions[0]);
+            $this->showSuggest = false;
+        }
+    }
+
+    public function selectPenghuni($id)
+    {
+        $p = $this->suggestions->find($id);
+        if ($p) {
+            $this->fillData($p);
+        }
+        $this->showSuggest = false;
+    }
+
+    private function fillData(Penghuni $p)
+    {
+        $this->nama_penghuni = $p->nama;
+        $this->email = $p->email;
+        $this->no_hp = $p->no_hp;
+        $this->jumlah = $p->kamar->roomType->harga ?? 0;
+
+        $this->periode_mulai = optional($p->tanggal_masuk)->format('Y-m-d') ?: now()->startOfMonth()->format('Y-m-d');
+        $this->periode_selesai = optional($p->tanggal_keluar)->format('Y-m-d') ?: now()->endOfMonth()->format('Y-m-d');
+    }
+
+    /* -------------------------------------------------
+     | Submit
+     *--------------------------------------------------*/
     public function submit()
     {
         $this->validate();
 
         try {
-            // Cari atau buat penghuni berdasarkan email
+            // cari atau buat penghuni
             $penghuni = Penghuni::firstOrCreate(
                 ['email' => $this->email],
                 [
@@ -85,9 +161,10 @@ class PembayaranForm extends Component
                 ]
             );
 
-            // Buat pembayaran
+            // insert pembayaran
             $pembayaran = Pembayaran::create([
                 'penghuni_id' => $penghuni->id,
+                'room_id' => $penghuni->room_id, // opsional
                 'jumlah' => $this->jumlah,
                 'periode_mulai' => $this->periode_mulai,
                 'periode_selesai' => $this->periode_selesai,
@@ -96,29 +173,29 @@ class PembayaranForm extends Component
                 'catatan' => $this->catatan,
             ]);
 
-            // Upload bukti pembayaran
+            // upload bukti
             if ($this->bukti_file) {
                 $path = $this->bukti_file->store('pembayaran/bukti', 'public');
-                $extension = $this->bukti_file->getClientOriginalExtension();
-
                 PembayaranBukti::create([
                     'pembayaran_id' => $pembayaran->id,
                     'file_path' => $path,
-                    'tipe' => $extension,
+                    'tipe' => $this->bukti_file->getClientOriginalExtension(),
                 ]);
             }
 
             $this->kode_transaksi = $pembayaran->kode_transaksi;
             $this->submitted = true;
 
-            // Reset form
+            // reset form
             $this->reset([
                 'nama_penghuni',
                 'email',
                 'no_hp',
                 'jumlah',
                 'catatan',
-                'bukti_file'
+                'bukti_file',
+                'suggestions',
+                'showSuggest',
             ]);
 
         } catch (\Exception $e) {
