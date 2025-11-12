@@ -3,142 +3,116 @@
 <head>
     <meta charset="utf-8">
     <title>Laporan Keuangan</title>
-
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
     <style>
-        :root {
-            --clr-primary: #2563eb;
-            --clr-primary-light: #eff6ff;
-            --clr-success: #10b981;
-            --clr-danger: #ef4444;
-            --clr-gray: #6b7280;
-            --clr-bg: #f9fafb;
-            --radius: 8px;
-            --shadow: 0 2px 6px rgba(0,0,0,.08);
-            --font: 'Inter', sans-serif;
-        }
-
         * { box-sizing: border-box; }
-
+        
         body {
             margin: 0;
-            font-family: var(--font);
-            font-size: 14px;
-            color: #111827;
-            background: var(--clr-bg);
-            padding: 40px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 12px;
+            color: #000;
+            background: #fff;
+            padding: 20px;
         }
 
-        h2, h3 { margin: 0 0 8px; font-weight: 600; }
-        h2 { font-size: 24px; }
-        h3 { font-size: 18px; }
-
-        .card {
-            background: #fff;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 24px;
-            margin-bottom: 24px;
+        h2 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            font-weight: bold;
         }
 
         .meta {
-            color: var(--clr-gray);
-            margin-bottom: 20px;
+            margin: 0 0 20px 0;
+            font-size: 11px;
+            color: #333;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
-        }
-        thead { background: var(--clr-primary-light); }
-        th, td { padding: 12px 16px; text-align: left; }
-        th {
-            font-weight: 600;
-            color: var(--clr-primary);
-            text-transform: uppercase;
             font-size: 11px;
-            letter-spacing: .5px;
         }
-        tbody tr {
-            border-bottom: 1px solid #e5e7eb;
-            transition: background .15s;
-        }
-        tbody tr:hover { background: #f3f4f6; }
-        tbody tr:last-child { border: none; }
 
-        .status {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 500;
-            text-transform: capitalize;
+        th, td {
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: top;
+            border: 1px solid #000;
         }
-        .status.lunas { background: #d1fae5; color: #065f46; }
-        .status.belum-bayar { background: #fee2e2; color: #991b1b; }
+
+        th {
+            font-weight: bold;
+            background: #f0f0f0;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
 
         .total-box {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--clr-primary);
-            color: #fff;
-            padding: 16px 24px;
-            border-radius: var(--radius);
-            font-size: 18px;
-            font-weight: 600;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 12px;
         }
-        .total-box span:first-child { opacity: .9; }
+
+        .total-box table {
+            width: 50%;
+            margin-left: auto;
+        }
+
+        .total-box td {
+            border: none;
+            padding: 4px 8px;
+        }
+
+        .total-box td:last-child {
+            text-align: right;
+        }
 
         @media print {
-            body { background: #fff; padding: 0; }
-            .card { box-shadow: none; padding: 0; }
-            .total-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { padding: 0; }
+            th { background: #e0e0e0 !important; -webkit-print-color-adjust: exact; }
+            tbody tr:nth-child(even) { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; }
         }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Laporan Keuangan</h2>
-    <p class="meta">Periode: {{ $startDate }} s/d {{ $endDate }}</p>
+<h2>LAPORAN KEUANGAN</h2>
+<p class="meta">Periode: {{ $startDate }} s/d {{ $endDate }}</p>
 
-    <table>
-        <thead>
+<table>
+    <thead>
+        <tr>
+            <th>TANGGAL</th>
+            <th>KODE TRANSAKSI</th>
+            <th>PENGHUNI</th>
+            <th>KAMAR</th>
+            <th style="text-align:right">JUMLAH</th>
+            <th style="text-align:center">STATUS</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($transaksi as $trx)
             <tr>
-                <th>Tanggal</th>
-                <th>Kode Transaksi</th>
-                <th>Penghuni</th>
-                <th>Kamar</th>
-                <th style="text-align:right">Jumlah</th>
-                <th style="text-align:center">Status</th>
+                <td>{{ $trx->created_at->format('d/m/Y') }}</td>
+                <td>{{ $trx->kode_transaksi }}</td>
+                <td>{{ $trx->penghuni->nama ?? '-' }}</td>
+                <td>{{ $trx->room->nomor_kamar ?? '-' }}</td>
+                <td style="text-align:right">{{ number_format($trx->jumlah, 0, ',', '.') }}</td>
+                <td style="text-align:center">{{ strtoupper($trx->status) }}</td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach($transaksi as $trx)
-                <tr>
-                    <td>{{ $trx->created_at->format('d/m/Y') }}</td>
-                    <td>{{ $trx->kode_transaksi }}</td>
-                    <td>{{ $trx->penghuni->nama ?? '-' }}</td>
-                    <td>{{ $trx->room->nomor_kamar ?? '-' }}</td>
-                    <td style="text-align:right">Rp {{ number_format($trx->jumlah, 0, ',', '.') }}</td>
-                    <td style="text-align:center">
-                        <span class="status {{ $trx->status === 'lunas' ? 'lunas' : 'belum-bayar' }}">
-                            {{ ucfirst($trx->status) }}
-                        </span>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
+        @endforeach
+    </tbody>
+</table>
 
 <div class="total-box">
-    <span>Total Penerimaan</span>
-    <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
+    <table>
+        <tr>
+            <td>TOTAL PENERIMAAN</td>
+            <td>Rp {{ number_format($total, 0, ',', '.') }}</td>
+        </tr>
+    </table>
 </div>
 
 </body>

@@ -10,23 +10,43 @@ use App\Livewire\Laporan\LaporanKeuanganExport;
 
 class LaporanKeuangan extends Component
 {
-    public $startDate;
-    public $endDate;
-    public $status = 'lunas'; // default hanya transaksi lunas
+    public string $startDate;
+    public string $endDate;
+    public string $status = 'lunas';
 
-    public function mount()
+    public function mount(): void
     {
-        $this->startDate = now()->startOfMonth()->toDateString();
-        $this->endDate = now()->endOfMonth()->toDateString();
+        $this->setDefaultRange();
     }
+
+    /* ----------  API publik (≤ 3 baris)  ---------- */
+
+    public function exportExcel()
+    {
+        return Excel::download(
+            new LaporanKeuanganExport($this->startDate, $this->endDate, $this->status),
+            'laporan_keuangan.xlsx'
+        );
+    }
+
+    public function exportPdf()
+    {
+        return response()->streamDownload(
+            fn() => print Pdf::loadView('livewire.laporan.laporan-keuangan-export', $this->reportData())->output(),
+            'laporan_keuangan.pdf'
+        );
+    }
+
+    public function render()
+    {
+        return view('livewire.laporan.laporan-keuangan', $this->reportData());
+    }
+
+    /* ----------  Query / Helper  ---------- */
 
     public function getTransaksiProperty()
     {
-        return Pembayaran::with(['penghuni', 'room'])
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->whereBetween('created_at', [$this->startDate, $this->endDate])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        return $this->baseQuery()->get();
     }
 
     public function getTotalProperty()
@@ -34,33 +54,27 @@ class LaporanKeuangan extends Component
         return $this->transaksi->sum('jumlah');
     }
 
-    public function exportExcel()
+    private function baseQuery()
     {
-        return Excel::download(new LaporanKeuanganExport(
-            $this->startDate,
-            $this->endDate,
-            $this->status
-        ), 'laporan_keuangan.xlsx');
+        return Pembayaran::with(['penghuni', 'room'])
+            ->where('status', $this->status)
+            ->whereBetween('created_at', [$this->startDate, $this->endDate])
+            ->latest();
     }
 
-    public function exportPdf()
+    private function reportData(): array
     {
-        $data = [
+        return [
             'transaksi' => $this->transaksi,
             'total' => $this->total,
             'startDate' => $this->startDate,
             'endDate' => $this->endDate,
         ];
-
-        $pdf = Pdf::loadView('livewire.laporan.laporan-keuangan-export', $data);
-        return response()->streamDownload(fn() => print ($pdf->output()), 'laporan_keuangan.pdf');
     }
 
-    public function render()
+    private function setDefaultRange(): void
     {
-        return view('livewire.laporan.laporan-keuangan', [
-            'transaksi' => $this->transaksi,   // <-- penting
-            'total' => $this->total,       // <-- penting
-        ]);
+        $this->startDate = now()->startOfMonth()->toDateString();
+        $this->endDate = now()->endOfMonth()->toDateString();
     }
 }

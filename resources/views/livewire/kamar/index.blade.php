@@ -178,9 +178,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                     </button>
-                                    <button wire:click="deleteRoom({{ $room->id }})"
-                                            wire:confirm="Apakah Anda yakin ingin menghapus pembayaran ini?"
-                                            class="text-red-600 hover:text-red-900" title="Hapus">
+                                    <button wire:click="openDeleteModal('room', {{ $room->id }}, 'Kamar {{ $room->nomor_kamar }}')" class="text-red-600 hover:text-red-900" title="Hapus">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
@@ -209,7 +207,7 @@
                             <span>{{ $building->nama }}</span>
                             <div class="flex gap-2">
                                 <button wire:click="editBuilding({{ $building->id }})" class="text-indigo-600 hover:text-indigo-900">Edit</button>
-                                <button wire:click="deleteBuilding({{ $building->id }})" class="text-red-600 hover:text-red-900">Hapus</button>
+                                <button wire:click="openDeleteModal('building', {{ $building->id }}, '{{ $building->nama }}')" class="text-red-600 hover:text-red-900">Hapus</button>
                             </div>
                         </li>
                     @endforeach
@@ -228,7 +226,7 @@
                             <span>Lantai {{ $floor->nomor_lantai }} - {{ $floor->building->nama }}</span>
                             <div class="flex gap-2">
                                 <button wire:click="editFloor({{ $floor->id }})" class="text-indigo-600 hover:text-indigo-900">Edit</button>
-                                <button wire:click="deleteFloor({{ $floor->id }})" class="text-red-600 hover:text-red-900">Hapus</button>
+                                <button wire:click="openDeleteModal('floor', {{ $floor->id }}, 'Lantai {{ $floor->nomor_lantai }} - {{ $floor->building->nama }}')" class="text-red-600 hover:text-red-900">Hapus</button>
                             </div>
                         </li>
                     @endforeach
@@ -247,7 +245,7 @@
                             <span>{{ $type->nama }} - Rp {{ number_format($type->harga, 0, ',', '.') }}</span>
                             <div class="flex gap-2">
                                 <button wire:click="editRoomType({{ $type->id }})" class="text-indigo-600 hover:text-indigo-900">Edit</button>
-                                <button wire:click="deleteRoomType({{ $type->id }})" class="text-red-600 hover:text-red-900">Hapus</button>
+                                <button wire:click="openDeleteModal('roomtype', {{ $type->id }}, '{{ $type->nama }}')" class="text-red-600 hover:text-red-900">Hapus</button>
                             </div>
                         </li>
                     @endforeach
@@ -370,5 +368,42 @@
                 </div>
             </div>
         </flux:modal>
+    @endif
+
+    {{-- Modal Delete Confirmation --}}
+    @if($showDeleteModal)
+    <div class="fixed inset-0 backdrop-blur-sm bg-black/30 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-lg bg-white">
+            <div class="flex items-center mb-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-bold text-gray-900">Konfirmasi Hapus</h3>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <p class="text-gray-600">Apakah Anda yakin ingin menghapus <strong>{{ $deleteItemName }}</strong>?</p>
+                <p class="text-sm text-gray-500 mt-2">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="button" wire:click="closeDeleteModal" 
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
+                    Batal
+                </button>
+                <button type="button" wire:click="confirmDelete" 
+                        wire:loading.attr="disabled"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50">
+                    <span wire:loading wire:target="confirmDelete">Menghapus...</span>
+                    <span wire:loading.remove wire:target="confirmDelete">Hapus</span>
+                </button>
+            </div>
+        </div>
+    </div>
     @endif
 </div>

@@ -3,40 +3,28 @@
 namespace App\Livewire\Laporan;
 
 use App\Models\Pembayaran;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Illuminate\Database\Eloquent\Collection;
+use Maatwebsite\Excel\Concerns\FromCollection;   // composer require maatwebsite/excel
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
 class LaporanKeuanganExport implements FromCollection, WithHeadings, WithMapping
 {
-    protected $startDate, $endDate, $status;
-
-    public function __construct($startDate, $endDate, $status)
-    {
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
-        $this->status = $status;
+    public function __construct(
+        private readonly string $startDate,
+        private readonly string $endDate,
+        private readonly string $status
+    ) {
     }
 
-    public function collection()
+    public function collection(): Collection
     {
-        return Pembayaran::with(['penghuni', 'room'])
-            ->when($this->status, fn($q) => $q->where('status', $this->status))
-            ->whereBetween('created_at', [$this->startDate, $this->endDate])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        return $this->query()->get();
     }
 
     public function headings(): array
     {
-        return [
-            'Tanggal',
-            'Kode Transaksi',
-            'Penghuni',
-            'Kamar',
-            'Jumlah',
-            'Status',
-        ];
+        return ['Tanggal', 'Kode Transaksi', 'Penghuni', 'Kamar', 'Jumlah', 'Status'];
     }
 
     public function map($row): array
@@ -46,13 +34,18 @@ class LaporanKeuanganExport implements FromCollection, WithHeadings, WithMapping
             $row->kode_transaksi,
             $row->penghuni->nama ?? '-',
             $row->room->nomor_kamar ?? '-',
-            number_format($row->jumlah, 2, ',', '.'),
+            number_format((float) $row->jumlah, 2, ',', '.'),
             ucfirst($row->status),
         ];
     }
 
-    public function render()
+    /* ----------  helpers  ---------- */
+
+    private function query()
     {
-        return view('livewire.laporan.laporan-keuangan-export');
+        return Pembayaran::with(['penghuni', 'room'])
+            ->where('status', $this->status)
+            ->whereBetween('created_at', [$this->startDate, $this->endDate])
+            ->latest();
     }
 }
