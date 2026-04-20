@@ -36,7 +36,7 @@ class PembayaranForm extends Component
     public function render()
     {
         // Hapus ->layout() untuk kompatibilitas Livewire 3
-        return view('livewire.pembayaran.pembayaran-form');
+        return view('livewire.pembayaran.pembayaran-form')->layout('guest');
     }
 
     // Event Handlers

@@ -46,6 +46,9 @@ Route::get('/kamar', Index::class)
 
 Route::get('/public/daftar-penghuni', PenghuniRegister::class)
     ->name('penghuni.penghuni-register');
+// Route untuk Public Form (Tidak memerlukan authentication)
+Route::get('/public/upload-bukti-pembayaran', PembayaranForm::class)
+    ->name('pembayaran.pembayaran-form');
 
 Route::middleware(['auth'])
     ->group(function () {
@@ -55,9 +58,6 @@ Route::middleware(['auth'])
 Route::middleware(['auth'])->group(function () {
     Route::get('/pembayaran', PembayaranManager::class)->name('pembayaran.pembayaran-manager');
 });
-
-// Route untuk Public Form (Tidak memerlukan authentication)
-Route::get('/public/upload-bukti-pembayaran', PembayaranForm::class)->name('pembayaran.pembayaran-form');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/laporan-keuangan', LaporanKeuangan::class)
